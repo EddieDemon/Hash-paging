@@ -5,8 +5,8 @@
 <head runat="server">
     <title>Hash Paging example - Hash Paging v1.2.0 - Intcon</title>
     <script type="text/javascript" src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.8.2.min.js"></script>
-    <script type="text/javascript" src="/Scripts/mscorlib.js"></script>
-    <script type="text/javascript" src="/Scripts/hashPaging.js"></script>
+    <script type="text/javascript" src="../Scripts/mscorlib.js"></script>
+    <script type="text/javascript" src="../Scripts/hashPaging.js"></script>
     <script type="text/javascript">
         hashPaging.error = function (request, textStatus, error) {
             alert("An error occured while loading a dynamic page.\n" + error);
