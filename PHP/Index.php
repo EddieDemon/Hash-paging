@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
-<head runat="server">
-    <title>Hash Paging example - Hash Paging v1.2.0 - Intcon</title>
+<head>
+    <title>Hash Paging example - Hash Paging v2.2.0 - Intcon</title>
     <script type="text/javascript" src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.8.2.min.js"></script>
     <script type="text/javascript" src="../Scripts/mscorlib.js"></script>
     <script type="text/javascript" src="../Scripts/hashPaging.js"></script>
