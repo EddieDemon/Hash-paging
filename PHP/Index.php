@@ -1,12 +1,10 @@
-﻿<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="Default.aspx.cs" Inherits="HashTagBrowsing.Default" %>
-
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head runat="server">
     <title>Hash Paging example - Hash Paging v1.2.0 - Intcon</title>
     <script type="text/javascript" src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.8.2.min.js"></script>
-    <script type="text/javascript" src="/Scripts/mscorlib.js"></script>
-    <script type="text/javascript" src="/Scripts/hashPaging.js"></script>
+    <script type="text/javascript" src="../Scripts/mscorlib.js"></script>
+    <script type="text/javascript" src="../Scripts/hashPaging.js"></script>
     <script type="text/javascript">
         hashPaging.error = function (request, textStatus, error) {
             alert("An error occured while loading a dynamic page.\n" + error);
@@ -49,6 +47,8 @@ is a server-side part of the website.
 There are a few things you can easily change and a few things that are required to be inserted yourself.
     1. Handle the error event. (hashPaging.error(request, textStatus, error))
     2. Set the ID of the element which content should change. (hashPaging.elementId)
+
+All you need are the files in /Scripts and reference to them in your pages. The included .cs and .aspx files are as example.
 
 This library was built using <a href="http://scriptsharp.com/">Script# v0.7.4.0</a> <sup><a
     href="https://github.com/nikhilk">GitHub</a></sup>.

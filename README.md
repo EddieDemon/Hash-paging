@@ -21,4 +21,6 @@ There are a few things you can easily change and a few things that are required 
     1. Handle the error event. (hashPaging.error(request, textStatus, error))
     2. Set the ID of the element which content should change. (hashPaging.elementId)
 
+All you need are the files in /Scripts and reference to them in your pages. The included .cs and .aspx files are as example.	
+
 This library was built using Script# v0.7.4.0 [http://scriptsharp.com/] GitHub [https://github.com/nikhilk].
