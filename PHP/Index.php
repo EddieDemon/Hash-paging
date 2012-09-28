@@ -9,6 +9,7 @@
         hashPaging.error = function (request, textStatus, error) {
             alert("An error occured while loading a dynamic page.\n" + error);
         };
+		 hashPaging.url = "./Callback.php"
         hashPaging.elementId = "hp_Content";
         function a(b) { if ($(b).attr("style") == null || $(b).css("display") == "block") $(b).hide(); else $(b).show(); }
     </script>
@@ -47,6 +48,7 @@ is a server-side part of the website.
 There are a few things you can easily change and a few things that are required to be inserted yourself.
     1. Handle the error event. (hashPaging.error(request, textStatus, error))
     2. Set the ID of the element which content should change. (hashPaging.elementId)
+	3. Set the callback URL (hashPaging.url) (Default: /Callback.aspx)
 
 All you need are the files in /Scripts and reference to them in your pages. The included .cs and .aspx files are as example.
 
