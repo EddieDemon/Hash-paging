@@ -3,6 +3,9 @@ Hash-paging
 
 Browsing pages with the hash-tag. Like Twitter does.
 
+The library will automatically detect changes to the URL, and also when the page is download for the first time. (It will request the page "Home").
+This way you don't have to call anything to load any page.
+
 When using hash paging you don't point to curtain parts of a page, but rather use
 it as navigator with a lower bandwidth.
 

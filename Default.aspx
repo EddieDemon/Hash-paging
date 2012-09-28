@@ -28,6 +28,9 @@
             Explained</button>
         <div id="c1" style="display: none">
             <pre>
+The library will automatically detect changes to the URL, and also when the page is download for the first time. (It will request the page "Home").
+This way you don't have to call anything to load any page.
+
 When you click on any of the above links you'll notice that the URL changes but,
 the page is not reloaded. This is because the hash-tag with suffix value is a pointer
 to a part of the current page.
