@@ -2,65 +2,26 @@
 //! More information at http://projects.nikhilk.net/ScriptSharp
 //!
 
-///////////////////////////////////////////////////////////////////////////////
-// Globals
+(function(global) {
+  global.ss = {
+    version: '0.7.6.0',
 
-(function () {
-  var globals = {
-    version: '0.7.4.0',
-
-    isUndefined: function (o) {
+    isUndefined: function(o) {
       return (o === undefined);
     },
 
-    isNull: function (o) {
+    isNull: function(o) {
       return (o === null);
     },
 
-    isNullOrUndefined: function (o) {
+    isNullOrUndefined: function(o) {
       return (o === null) || (o === undefined);
     },
 
-    isValue: function (o) {
+    isValue: function(o) {
       return (o !== null) && (o !== undefined);
     }
   };
-
-  var started = false;
-  var startCallbacks = [];
-
-  function onStartup(cb) {
-    startCallbacks ? startCallbacks.push(cb) : setTimeout(cb, 0);
-  }
-  function startup() {
-    if (startCallbacks) {
-      var callbacks = startCallbacks;
-      startCallbacks = null;
-      for (var i = 0, l = callbacks.length; i < l; i++) {
-        callbacks[i]();
-      }
-    }
-  }
-  if (document.addEventListener) {
-    document.readyState == 'complete' ? startup() : document.addEventListener('DOMContentLoaded', startup, false);
-  }
-  else if (window.attachEvent) {
-    window.attachEvent('onload', function () {
-      startup();
-    });
-  }
-
-  var ss = window.ss;
-  if (!ss) {
-    window.ss = ss = {
-      init: onStartup,
-      ready: onStartup
-    };
-  }
-  for (var n in globals) {
-    ss[n] = globals[n];
-  }
-})();
 
 ///////////////////////////////////////////////////////////////////////////////
 // Object Extensions
@@ -416,7 +377,7 @@ String.prototype.indexOfAny = function String$indexOfAny(chars, startIndex, coun
 
 String.prototype.insert = function String$insert(index, value) {
     if (!value) {
-        return this;
+        return this.valueOf();
     }
     if (!index) {
         return value + this;
@@ -428,6 +389,10 @@ String.prototype.insert = function String$insert(index, value) {
 
 String.isNullOrEmpty = function String$isNullOrEmpty(s) {
     return !s || !s.length;
+}
+
+String.isNullOrWhiteSpace = function String$isNullOrWhiteSpace(s) {
+    return String.isNullOrEmpty(s) || s.trim() === "";
 }
 
 String.prototype.lastIndexOfAny = function String$lastIndexOfAny(chars, startIndex, count) {
@@ -461,7 +426,7 @@ String.prototype.padLeft = function String$padLeft(totalWidth, ch) {
         ch = ch || ' ';
         return String.fromChar(ch, totalWidth - this.length) + this;
     }
-    return this;
+    return this.valueOf();
 }
 
 String.prototype.padRight = function String$padRight(totalWidth, ch) {
@@ -469,7 +434,7 @@ String.prototype.padRight = function String$padRight(totalWidth, ch) {
         ch = ch || ' ';
         return this + String.fromChar(ch, totalWidth - this.length);
     }
-    return this;
+    return this.valueOf();
 }
 
 String.prototype.remove = function String$remove(index, count) {
@@ -520,16 +485,6 @@ Array.prototype.add = function Array$add(item) {
 
 Array.prototype.addRange = function Array$addRange(items) {
     this.push.apply(this, items);
-}
-
-Array.prototype.aggregate = function Array$aggregate(seed, callback, instance) {
-    var length = this.length;
-    for (var i = 0; i < length; i++) {
-        if (i in this) {
-            seed = callback.call(instance, seed, this[i], i, this);
-        }
-    }
-    return seed;
 }
 
 Array.prototype.clear = function Array$clear() {
@@ -688,6 +643,18 @@ Array.prototype.insertRange = function Array$insertRange(index, items) {
     }
 }
 
+if (!Array.prototype.lastIndexOf) {
+    Array.prototype.lastIndexOf = function Array$lastIndexOf(item, fromIndex) {
+        fromIndex = fromIndex || this.length - 1;
+        for (var index = fromIndex; index >= 0; index--) {
+            if (this[index] === item) {
+                return index;
+            }
+        }
+        return -1;
+    }
+}
+
 if (!Array.prototype.map) {
     Array.prototype.map = function Array$map(callback, instance) {
         var length = this.length;
@@ -703,6 +670,39 @@ if (!Array.prototype.map) {
 
 Array.parse = function Array$parse(s) {
     return eval('(' + s + ')');
+}
+
+if (!Array.prototype.reduce) {
+    Array.prototype.reduce = function Array$reduce(callback, initialValue) {
+        var value = initialValue;
+        var length = this.length;
+        if (length) {
+            var i = 0;
+            if (arguments.length == 1) {
+                value = this[0];
+                i++;
+            }
+            for (; i < length; i++) {
+                value = callback(value, this[i], i, this);
+            }
+        }
+        return value;
+    }
+    Array.prototype.reduceRight = function Array$reduceRight(callback, initialValue) {
+        var value = initialValue;
+        var length = this.length;
+        if (length) {
+            var i = length - 1;
+            if (arguments.length == 1) {
+                value = this[i];
+                i--;
+            }
+            for (; i >= 0; i--) {
+                value = callback(value, this[i], i, this);
+            }
+        }
+        return value;
+    }
 }
 
 Array.prototype.remove = function Array$remove(item) {
@@ -1020,57 +1020,35 @@ Error.createError = function Error$createError(message, errorInfo, innerExceptio
 ///////////////////////////////////////////////////////////////////////////////
 // Debug Extensions
 
-ss.Debug = window.Debug || function() {};
-ss.Debug.__typeName = 'Debug';
-
-if (!ss.Debug.writeln) {
-    ss.Debug.writeln = function Debug$writeln(text) {
-        if (window.console) {
-            if (window.console.debug) {
-                window.console.debug(text);
-                return;
-            }
-            else if (window.console.log) {
-                window.console.log(text);
-                return;
-            }
-        }
-        else if (window.opera &&
-            window.opera.postError) {
-            window.opera.postError(text);
-            return;
-        }
+if (!global.console) {
+  global.console = {
+    log: function() {
+    },
+    assert: function() {
     }
+  }
 }
 
-ss.Debug._fail = function Debug$_fail(message) {
-    ss.Debug.writeln(message);
+console.fail = function(message) {
+  console.assert(false, message);
+  if (global.navigator && (global.navigator.userAgent.indexOf('MSIE') > 0)) {
     eval('debugger;');
-}
-
-ss.Debug.assert = function Debug$assert(condition, message) {
-    if (!condition) {
-        message = 'Assert failed: ' + message;
-        if (confirm(message + '\r\n\r\nBreak into debugger?')) {
-            ss.Debug._fail(message);
-        }
-    }
-}
-
-ss.Debug.fail = function Debug$fail(message) {
-    ss.Debug._fail(message);
+  }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 // Type System Implementation
 
-window.Type = Function;
+global.Type = Function;
 Type.__typeName = 'Type';
 
-window.__Namespace = function(name) {
+var __namespaces = {};
+var __rootNamespaces = [];
+
+function ns(name) {
     this.__typeName = name;
 }
-__Namespace.prototype = {
+ns.prototype = {
     __namespace: true,
     getName: function() {
         return this.__typeName;
@@ -1078,33 +1056,26 @@ __Namespace.prototype = {
 }
 
 Type.registerNamespace = function Type$registerNamespace(name) {
-    if (!window.__namespaces) {
-        window.__namespaces = {};
-    }
-    if (!window.__rootNamespaces) {
-        window.__rootNamespaces = [];
-    }
-
-    if (window.__namespaces[name]) {
+    if (__namespaces[name]) {
         return;
     }
 
-    var ns = window;
+    var nsi = global;
     var nameParts = name.split('.');
 
     for (var i = 0; i < nameParts.length; i++) {
         var part = nameParts[i];
-        var nso = ns[part];
+        var nso = nsi[part];
         if (!nso) {
-            ns[part] = nso = new __Namespace(nameParts.slice(0, i + 1).join('.'));
+            nsi[part] = nso = new ns(nameParts.slice(0, i + 1).join('.'));
             if (i == 0) {
-                window.__rootNamespaces.add(nso);
+                __rootNamespaces.add(nso);
             }
         }
-        ns = nso;
+        nsi = nso;
     }
 
-    window.__namespaces[name] = ns;
+    __namespaces[name] = nsi;
 }
 
 Type.prototype.registerClass = function Type$registerClass(name, baseType, interfaceType) {
@@ -1206,10 +1177,6 @@ Type.prototype.get_name = function Type$get_name() {
     return fullName;
 }
 
-Type.prototype.getInterfaces = function Type$getInterfaces() {
-    return this.__interfaces;
-}
-
 Type.prototype.isInstanceOfType = function Type$isInstanceOfType(instance) {
     if (ss.isNullOrUndefined(instance)) {
         return false;
@@ -1253,24 +1220,12 @@ Type.prototype.isAssignableFrom = function Type$isAssignableFrom(type) {
     return false;
 }
 
-Type.isClass = function Type$isClass(type) {
-    return (type.__class == true);
+Type.isClass = function Type$isClass(obj) {
+    return (obj.__class == true);
 }
 
-Type.isEnum = function Type$isEnum(type) {
-    return (type.__enum == true);
-}
-
-Type.isFlags = function Type$isFlags(type) {
-    return ((type.__enum == true) && (type.__flags == true));
-}
-
-Type.isInterface = function Type$isInterface(type) {
-    return (type.__interface == true);
-}
-
-Type.isNamespace = function Type$isNamespace(object) {
-    return (object.__namespace == true);
+Type.isInterface = function Type$isInterface(obj) {
+    return (obj.__interface == true);
 }
 
 Type.canCast = function Type$canCast(instance, type) {
@@ -1315,10 +1270,6 @@ Type.getType = function Type$getType(typeName) {
         Type.__typeCache[typeName] = type;
     }
     return type;
-}
-
-Type.parse = function Type$parse(typeName) {
-    return Type.getType(typeName);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1422,12 +1373,12 @@ ss.Delegate.createExport = function Delegate$createExport(delegate, multiUse, na
     // Generate a unique name if one is not specified
     name = name || '__' + (new Date()).valueOf();
 
-    // Exported delegates go on window (so they are callable using a simple identifier).
+    // Exported delegates go on global object (so they are callable using a simple identifier).
 
     // Multi-use delegates are exported directly; for the rest a stub is exported, and the stub
     // first deletes, and then invokes the actual delegate.
-    window[name] = multiUse ? delegate : function() {
-      try { delete window[name]; } catch(e) { window[name] = undefined; }
+    global[name] = multiUse ? delegate : function() {
+      try { delete global[name]; } catch(e) { global[name] = undefined; }
       delegate.apply(null, arguments);
     };
 
@@ -1435,11 +1386,11 @@ ss.Delegate.createExport = function Delegate$createExport(delegate, multiUse, na
 }
 
 ss.Delegate.deleteExport = function Delegate$deleteExport(name) {
-    delete window[name];
+    delete global[name];
 }
 
 ss.Delegate.clearExport = function Delegate$clearExport(name) {
-    window[name] = ss.Delegate.empty;
+    global[name] = ss.Delegate.empty;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1572,12 +1523,12 @@ ss.IDisposable.registerInterface('IDisposable');
 // StringBuilder
 
 ss.StringBuilder = function StringBuilder$(s) {
-    this._parts = !ss.isNullOrUndefined(s) ? [s] : [];
+    this._parts = ss.isNullOrUndefined(s) || s === '' ? [] : [s];
     this.isEmpty = this._parts.length == 0;
 }
 ss.StringBuilder.prototype = {
     append: function StringBuilder$append(s) {
-        if (!ss.isNullOrUndefined(s)) {
+        if (!ss.isNullOrUndefined(s) && s !== '') {
             this._parts.add(s);
             this.isEmpty = false;
         }
@@ -1611,54 +1562,6 @@ ss.EventArgs = function EventArgs$() {
 ss.EventArgs.registerClass('EventArgs');
 
 ss.EventArgs.Empty = new ss.EventArgs();
-
-///////////////////////////////////////////////////////////////////////////////
-// XMLHttpRequest
-
-if (!window.XMLHttpRequest) {
-    window.XMLHttpRequest = function() {
-        var progIDs = [ 'Msxml2.XMLHTTP', 'Microsoft.XMLHTTP' ];
-
-        for (var i = 0; i < progIDs.length; i++) {
-            try {
-                var xmlHttp = new ActiveXObject(progIDs[i]);
-                return xmlHttp;
-            }
-            catch (ex) {
-            }
-        }
-
-        return null;
-    }
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// XmlDocumentParser
-
-ss.parseXml = function(markup) {
-    try {
-        if (DOMParser) {
-            var domParser = new DOMParser();
-            return domParser.parseFromString(markup, 'text/xml');
-        }
-        else {
-            var progIDs = [ 'Msxml2.DOMDocument.3.0', 'Msxml2.DOMDocument' ];
-        
-            for (var i = 0; i < progIDs.length; i++) {
-                var xmlDOM = new ActiveXObject(progIDs[i]);
-                xmlDOM.async = false;
-                xmlDOM.loadXML(markup);
-                xmlDOM.setProperty('SelectionLanguage', 'XPath');
-                
-                return xmlDOM;
-            }
-        }
-    }
-    catch (ex) {
-    }
-
-    return null;
-}
 
 ///////////////////////////////////////////////////////////////////////////////
 // CancelEventArgs
@@ -1807,6 +1710,150 @@ ss.ObservableCollection.prototype = {
 ss.ObservableCollection.registerClass('ObservableCollection', null, ss.IEnumerable);
 
 ///////////////////////////////////////////////////////////////////////////////
+// Task
+
+ss.Task = function(result) {
+  this._continuations = ss.isValue(result) ?
+                          (this.status = 'done', null) :
+                          (this.status = 'pending', []);
+  this.result = result;
+  this.error = null;
+}
+ss.Task.prototype = {
+  get_completed: function() {
+    return this.status != 'pending';
+  },
+  continueWith: function(continuation) {
+    if (this._continuations) {
+      this._continuations.push(continuation);
+    }
+    else {
+      var self = this;
+      setTimeout(function() { continuation(self); }, 0);
+    }
+    return this;
+  },
+  done: function(callback) {
+    return this.continueWith(function(t) {
+      if (t.status == 'done') {
+        callback(t.result);
+      }
+    });
+  },
+  fail: function(callback) {
+    return this.continueWith(function(t) {
+      if (t.status == 'failed') {
+        callback(t.error);
+      }
+    });
+  },
+  then: function(doneCallback, failCallback) {
+    return this.continueWith(function(t) {
+      t.status == 'done' ? doneCallback(t.result) : failCallback(t.error);
+    });
+  },
+  _update: function(result, error) {
+    if (this.status == 'pending') {
+      if (error) {
+        this.error = error;
+        this.status = 'failed';
+      }
+      else {
+        this.result = result;
+        this.status = 'done';
+      }
+
+      var continuations = this._continuations;
+      this._continuations = null;
+
+      for (var i = 0, c = continuations.length; i < c; i++) {
+        continuations[i](this);
+      }
+    }
+  }
+};
+ss.Task._join = function(tasks, any) {
+  tasks = Array.toArray(tasks);
+  console.assert(tasks.length > 1);
+
+  var count = tasks.length;
+
+  var interval = 0;
+  if ((count > 1) && (typeof tasks[0] == 'number')) {
+    interval = tasks[0];
+    tasks = tasks.slice(1);
+    count--;
+  }
+
+  var joinTask = new ss.Task();
+  var seen = 0;
+
+  function continuation(t) {
+    if (joinTask.status == 'pending') {
+      seen++;
+      if (any) {
+        joinTask._update(t);
+      }
+      else if (seen == count) {
+        joinTask._update(true);
+      }
+    }
+  }
+
+  function timeout() {
+    if (joinTask.status == 'pending') {
+      if (any) {
+        joinTask._update(null);
+      }
+      else {
+        joinTask._update(false);
+      }
+    }
+  }
+
+  if (interval != 0) {
+    setTimeout(timeout, interval);
+  }
+
+  for (var i = 0; i < count; i++) {
+    tasks[i].continueWith(continuation);
+  }
+
+  return joinTask;
+}
+ss.Task.all = function() {
+  return ss.Task._join(arguments, false);
+}
+ss.Task.any = function() {
+  return ss.Task._join(arguments, true);
+}
+ss.Task.delay = function(timeout) {
+  var timerTask = new ss.Task();
+
+  setTimeout(function() {
+    timerTask._update(true);
+  }, timeout);
+
+  return timerTask;
+}
+
+
+ss.Deferred = function(result) {
+  this.task = new ss.Task(result);
+}
+ss.Deferred.prototype = {
+  resolve: function(result) {
+    this.task._update(result);
+  },
+  reject: function(error) {
+    this.task._update(null, error || new Error());
+  }
+};
+
+ss.Deferred.registerClass('Deferred');
+ss.Task.registerClass('Task');
+
+///////////////////////////////////////////////////////////////////////////////
 // Interfaces
 
 ss.IApplication = function() { };
@@ -1823,3 +1870,4 @@ ss.IEventManager.registerInterface('IEventManager');
 
 ss.IInitializable = function () { };
 ss.IInitializable.registerInterface('IInitializable');
+})(this);

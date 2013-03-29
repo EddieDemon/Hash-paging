@@ -1,6 +1,9 @@
+//! HashPaging.debug.js
+//
+
 /*!
  * hashPaging script version 2.2.0
- * Descritpion: Uses hash values to determine the content of the page. E.G.: http://www.myurl.com/#home
+ * Description: Uses hash values to determine the content of the page. E.G.: http://www.myurl.com/#home
  *
  * Distributed in whole under the terms of the MIT http://jquery.org/license
  *
@@ -26,43 +29,59 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-//! hashPaging.debug.js
-//
-
 (function($) {
 
 ////////////////////////////////////////////////////////////////////////////////
-// _initializer
+// HashPaging
 
-
-
-////////////////////////////////////////////////////////////////////////////////
-// hashPaging
-
-window.hashPaging = function hashPaging() {
+window.HashPaging = function HashPaging() {
     /// <field name="url" type="String" static="true">
+    /// </field>
+    /// <field name="script_url" type="String" static="true">
+    /// </field>
+    /// <field name="_enabled" type="Boolean" static="true">
     /// </field>
     /// <field name="error" type="Function" static="true">
     /// </field>
     /// <field name="elementId" type="String" static="true">
     /// </field>
+    /// <field name="hashChanged" type="Function" static="true">
+    /// </field>
+    /// <field name="defaultPage" type="String" static="true">
+    /// </field>
+    /// <field name="functioning" type="Boolean" static="true">
+    /// </field>
 }
-hashPaging.chkGo = function hashPaging$chkGo() {
+HashPaging.checkGo = function HashPaging$checkGo() {
+    if (!HashPaging._enabled) {
+        return;
+    }
     if (window.location.hash.length < 2) {
-        hashPaging.chkUrl('Home');
+        HashPaging.checkUrl(HashPaging.defaultPage);
     }
     else {
-        hashPaging.chkUrl(window.location.hash.replaceAll('#', ''));
+        HashPaging.checkUrl(window.location.hash.replaceAll('#', ''));
     }
 }
-hashPaging.chkUrl = function hashPaging$chkUrl(hash) {
+HashPaging.checkUrl = function HashPaging$checkUrl(hash) {
     /// <param name="hash" type="String">
     /// </param>
+    if (!HashPaging._enabled) {
+        return;
+    }
+    if (HashPaging.hashChanged != null) {
+        HashPaging.hashChanged(hash);
+    }
     try {
-        var fullUrl = '';
-        if (hash !== 'Home') {
+        if (hash !== HashPaging.defaultPage) {
             var flatUrl = (window.location.href.indexOf('#') > -1) ? window.location.href.substr(0, window.location.href.indexOf('#')) : window.location.href;
-            fullUrl = ((flatUrl.charAt(flatUrl.length - 1) === '/') ? flatUrl : flatUrl + '/') + '#' + hash;
+            var fullUrl = '';
+            if (window.location.pathname.indexOf('.') > -1) {
+                fullUrl = flatUrl + '#' + hash;
+            }
+            else {
+                fullUrl = ((flatUrl.charAt(flatUrl.length - 1) === '/') ? flatUrl : flatUrl + '/') + '#' + hash;
+            }
             if (window.location.href !== fullUrl) {
                 window.location.href = fullUrl;
                 return;
@@ -75,33 +94,55 @@ hashPaging.chkUrl = function hashPaging$chkUrl(hash) {
         jqAO.beforeSend = function(request) {
             request.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
         };
-        jqAO.data = rdata;
         jqAO.error = function(request, textStatus, error) {
-            hashPaging.error(request, textStatus, error);
-        };
-        jqAO.success = function(data, textStatus, request) {
-            $('#' + hashPaging.elementId).html(data);
+            HashPaging.error(request, textStatus, error);
         };
         jqAO.type = 'POST';
-        jqAO.url = hashPaging.url;
+        jqAO.data = rdata;
+        jqAO.dataType = 'html';
+        jqAO.success = function(data, textStatus, request) {
+            $('#' + HashPaging.elementId).html(data);
+        };
+        jqAO.url = HashPaging.url;
+        $.ajax(jqAO);
+        var sdata = {};
+        sdata.script = hash;
+        sdata.page = true;
+        jqAO.data = sdata;
+        jqAO.dataType = 'script';
+        jqAO.cache = true;
+        jqAO.url = HashPaging.script_url;
+        jqAO.success = function(data, textStatus, request) {
+        };
         $.ajax(jqAO);
     }
-    catch (ex) {
-        alert('An error occured while loading the page. Please try it later again. \n\n' + ex.message);
+    catch ($e1) {
     }
 }
 
 
-hashPaging.registerClass('hashPaging');
-(function () {
-    $(function() {
-        window.onhashchange = hashPaging.chkGo;
-        hashPaging.chkGo();
-    });
-})();
-hashPaging.url = '/Callback.aspx';
-hashPaging.error = null;
-hashPaging.elementId = null;
+////////////////////////////////////////////////////////////////////////////////
+// _initializer
+
+
+
+HashPaging.registerClass('HashPaging');
+HashPaging.url = '/Callback.aspx';
+HashPaging.script_url = '/Callback.aspx';
+HashPaging._enabled = true;
+HashPaging.error = null;
+HashPaging.elementId = null;
+HashPaging.hashChanged = null;
+HashPaging.defaultPage = 'Home';
+HashPaging.functioning = false;
+$(function() {
+    HashPaging.error = function(request, textStatus, error) {
+    };
+    if ("onhashchange" in window) { window.onhashchange=HashPaging.checkGo;
+    HashPaging.checkGo();
+    HashPaging.functioning = true;
+    };
+});
 })(jQuery);
 
-//! This script was generated using Script# v0.7.4.0
+//! This script was generated using Script# v0.7.6.0
